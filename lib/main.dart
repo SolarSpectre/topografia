@@ -1,0 +1,268 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'src/utils/area_calculator.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "", 
+      appId: "",
+      messagingSenderId: "",
+      projectId: "",
+      )
+  );
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Topografia App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MapScreen(),
+    );
+  }
+}
+
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  _MapScreenState createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  GoogleMapController? _mapController;
+  static const LatLng _initialPosition = LatLng(37.422, -122.084); // Default to GooglePlex
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription<Position>? _positionStream;
+  String _userId = "user_1"; // Placeholder for user ID
+  final Set<Marker> _markers = {};
+  final Set<Polygon> _polygons = {};
+  List<LatLng> _polygonPoints = [];
+  bool _isDrawing = false;
+  bool _isTracking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissionAndGetLocation();
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  void _requestPermissionAndGetLocation() async {
+    final status = await Permission.location.request();
+    if (status.isGranted) {
+      _getCurrentLocationAndAnimateCamera();
+      _startLocationUpdates();
+    } else if (status.isDenied) {
+      // Handle denied permissions
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+  }
+
+  void _getCurrentLocationAndAnimateCamera() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 15.0,
+          ),
+        ),
+      );
+    } catch (e) {
+      print("Error getting location: $e");
+    }
+  }
+
+  void _startLocationUpdates() {
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      if (_isTracking) {
+        _firestore.collection('locations').doc(_userId).set({
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+    });
+  }
+
+  void _stopLocationUpdates() {
+    _positionStream?.cancel();
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Real-time Map'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            onPressed: () {
+              _getCurrentLocationAndAnimateCamera();
+            },
+          ),
+          IconButton(
+            icon: Icon(_isTracking ? Icons.stop : Icons.play_arrow),
+            onPressed: () {
+              setState(() {
+                _isTracking = !_isTracking;
+                if (_isTracking) {
+                  _startLocationUpdates();
+                } else {
+                  _stopLocationUpdates();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collection('locations').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            _markers.clear();
+            for (var doc in snapshot.data!.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              var marker = Marker(
+                markerId: MarkerId(doc.id),
+                position: LatLng(data['latitude'], data['longitude']),
+                infoWindow: InfoWindow(title: 'User ${doc.id}'),
+              );
+              _markers.add(marker);
+            }
+          }
+
+          return StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('polygons').snapshots(),
+              builder: (context, polygonSnapshot) {
+                if (polygonSnapshot.hasData) {
+                  _polygons.clear();
+                  for (var doc in polygonSnapshot.data!.docs) {
+                    var data = doc.data() as Map<String, dynamic>;
+                    List<dynamic> points = data['points'];
+                    List<LatLng> polygonPoints = points
+                        .map((p) => LatLng(p['latitude'], p['longitude']))
+                        .toList();
+
+                    _polygons.add(
+                      Polygon(
+                        polygonId: PolygonId(doc.id),
+                        points: polygonPoints,
+                        strokeWidth: 2,
+                        strokeColor: Colors.red,
+                        fillColor: Colors.red.withOpacity(0.3),
+                      ),
+                    );
+                  }
+                }
+
+                return GoogleMap(
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition: const CameraPosition(
+                    target: _initialPosition,
+                    zoom: 15,
+                  ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  markers: _markers,
+                  polygons: _polygons,
+                  onTap: _isDrawing ? _addPolygonPoint : null,
+                );
+              });
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            _isDrawing = !_isDrawing;
+            if (!_isDrawing) {
+              // Clear points when exiting drawing mode without saving
+              _polygonPoints = [];
+            }
+          });
+        },
+        child: Icon(_isDrawing ? Icons.close : Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      persistentFooterButtons: _isDrawing
+          ? [
+              TextButton(
+                child: const Text('Finish Polygon'),
+                onPressed: () {
+                  _savePolygon();
+                },
+              )
+            ]
+          : null,
+    );
+  }
+
+  void _addPolygonPoint(LatLng point) {
+    setState(() {
+      _polygonPoints.add(point);
+      _polygons.removeWhere((p) => p.polygonId.value == 'current');
+      _polygons.add(
+        Polygon(
+          polygonId: const PolygonId('current'),
+          points: _polygonPoints,
+          strokeWidth: 2,
+          strokeColor: Colors.blue,
+          fillColor: Colors.blue.withOpacity(0.3),
+        ),
+      );
+    });
+  }
+
+  void _savePolygon() {
+    if (_polygonPoints.length > 2) {
+      double area = calculatePolygonArea(_polygonPoints);
+
+      _firestore.collection('polygons').add({
+        'points': _polygonPoints.map((p) => {'latitude': p.latitude, 'longitude': p.longitude}).toList(),
+        'area': area,
+        'user': _userId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Polygon saved! Area: ${area.toStringAsFixed(2)} m²')),
+      );
+    }
+    setState(() {
+      _polygonPoints = [];
+      _isDrawing = false;
+      _polygons.removeWhere((p) => p.polygonId.value == 'current');
+    });
+  }
+}
