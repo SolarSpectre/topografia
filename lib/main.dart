@@ -5,7 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import 'src/utils/area_calculator.dart';
+import 'src/utils/spherical_area_calculator.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'src/login_screen.dart';
 import 'src/home_screen.dart';
@@ -61,16 +62,18 @@ class _MapScreenState extends State<MapScreen> {
   static const LatLng _initialPosition = LatLng(37.422, -122.084); // Default to GooglePlex
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   StreamSubscription<Position>? _positionStream;
-  String _userId = "user_1"; // Placeholder for user ID
+  String? _userId;
   final Set<Marker> _markers = {};
   final Set<Polygon> _polygons = {};
   List<LatLng> _polygonPoints = [];
+  Set<Marker> _polygonPointMarkers = {};
   bool _isDrawing = false;
   bool _isTracking = false;
 
   @override
   void initState() {
     super.initState();
+    _userId = FirebaseAuth.instance.currentUser?.uid;
     _requestPermissionAndGetLocation();
   }
 
@@ -116,8 +119,8 @@ class _MapScreenState extends State<MapScreen> {
         distanceFilter: 10,
       ),
     ).listen((Position position) {
-      if (_isTracking) {
-        _firestore.collection('locations').doc(_userId).set({
+      if (_isTracking && _userId != null) {
+        _firestore.collection('locations').doc(_userId!).set({
           'latitude': position.latitude,
           'longitude': position.longitude,
           'timestamp': FieldValue.serverTimestamp(),
@@ -145,7 +148,7 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: () {
               _getCurrentLocationAndAnimateCamera();
             },
-          ),
+      ),
           IconButton(
             icon: Icon(_isTracking ? Icons.stop : Icons.play_arrow),
             onPressed: () {
@@ -158,9 +161,9 @@ class _MapScreenState extends State<MapScreen> {
                 }
               });
             },
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('locations').snapshots(),
         builder: (context, snapshot) {
@@ -196,6 +199,8 @@ class _MapScreenState extends State<MapScreen> {
                         strokeWidth: 2,
                         strokeColor: Colors.red,
                         fillColor: Colors.red.withOpacity(0.3),
+                        consumeTapEvents: true,
+                        onTap: () => _showPolygonInfo(polygonPoints, data['area']),
                       ),
                     );
                   }
@@ -209,7 +214,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   myLocationEnabled: true,
                   myLocationButtonEnabled: false,
-                  markers: _markers,
+                  markers: _markers.union(_polygonPointMarkers),
                   polygons: _polygons,
                   onTap: _isDrawing ? _addPolygonPoint : null,
                 );
@@ -223,6 +228,7 @@ class _MapScreenState extends State<MapScreen> {
             if (!_isDrawing) {
               // Clear points when exiting drawing mode without saving
               _polygonPoints = [];
+              _polygonPointMarkers = {};
             }
           });
         },
@@ -242,9 +248,59 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  void _showPolygonInfo(List<LatLng> points, num area) {
+    num perimeter = 0;
+    for (int i = 0; i < points.length; i++) {
+      perimeter += Geolocator.distanceBetween(
+          points[i].latitude,
+          points[i].longitude,
+          points[(i + 1) % points.length].latitude,
+          points[(i + 1) % points.length].longitude);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Polygon Details'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Area: ${area.toStringAsFixed(2)} m²'),
+                Text('Perimeter: ${perimeter.toStringAsFixed(2)} m'),
+                const SizedBox(height: 10),
+                const Text('Vertices:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...points.asMap().entries.map((entry) {
+                  int idx = entry.key;
+                  LatLng point = entry.value;
+                  return Text('  Point ${idx + 1}: (${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)})');
+                }),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _addPolygonPoint(LatLng point) {
     setState(() {
       _polygonPoints.add(point);
+      _polygonPointMarkers.add(
+        Marker(
+          markerId: MarkerId('polygon_point_${_polygonPoints.length}'),
+          position: point,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      );
       _polygons.removeWhere((p) => p.polygonId.value == 'current');
       _polygons.add(
         Polygon(
@@ -260,14 +316,16 @@ class _MapScreenState extends State<MapScreen> {
 
   void _savePolygon() {
     if (_polygonPoints.length > 2) {
-      double area = calculatePolygonArea(_polygonPoints);
+      final area = calculateSphericalPolygonArea(_polygonPoints);
 
+      if (_userId != null) {
       _firestore.collection('polygons').add({
         'points': _polygonPoints.map((p) => {'latitude': p.latitude, 'longitude': p.longitude}).toList(),
         'area': area,
         'user': _userId,
         'timestamp': FieldValue.serverTimestamp(),
       });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Polygon saved! Area: ${area.toStringAsFixed(2)} m²')),
@@ -275,6 +333,7 @@ class _MapScreenState extends State<MapScreen> {
     }
     setState(() {
       _polygonPoints = [];
+      _polygonPointMarkers = {};
       _isDrawing = false;
       _polygons.removeWhere((p) => p.polygonId.value == 'current');
     });

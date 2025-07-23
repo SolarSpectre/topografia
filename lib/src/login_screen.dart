@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -38,10 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      await _createUserDocument(userCredential.user);
       await FirebaseAuth.instance.signOut();
       // Esperar a que el usuario esté realmente deslogueado
       await Future.doWhile(() async {
@@ -63,6 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } finally {
       if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  Future<void> _createUserDocument(User? user) async {
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'email': user.email,
+        'uid': user.uid,
+      });
     }
   }
 
