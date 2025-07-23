@@ -24,8 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() { _error = e.message ?? 'Error de autenticación'; });
     } finally {
+      if (!mounted) return;
       setState(() { _loading = false; });
     }
   }

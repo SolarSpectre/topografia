@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -14,12 +15,12 @@ import 'src/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyBJMUpW1XXZovTRRS-RAiIMcc-YR3D5xPs",
-      appId: "1:515020313650:web:7d3688d99fec26b64ed82b",
-      messagingSenderId: "515020313650",
-      projectId: "a-f5b30",
-    )
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyBJMUpW1XXZovTRRS-RAiIMcc-YR3D5xPs",
+        appId: "1:515020313650:web:7d3688d99fec26b64ed82b",
+        messagingSenderId: "515020313650",
+        projectId: "a-f5b30",
+      )
   );
   runApp(const MyApp());
 }
@@ -87,7 +88,6 @@ class _MapScreenState extends State<MapScreen> {
     final status = await Permission.location.request();
     if (status.isGranted) {
       _getCurrentLocationAndAnimateCamera();
-      _startLocationUpdates();
     } else if (status.isDenied) {
       // Handle denied permissions
     } else if (status.isPermanentlyDenied) {
@@ -113,11 +113,23 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _startLocationUpdates() {
+    final locationSettings = defaultTargetPlatform == TargetPlatform.android
+        ? AndroidSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+              notificationTitle: 'Topografia App',
+              notificationText: 'Tracking your location in the background',
+              enableWakeLock: true,
+            ),
+          )
+        : const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          );
+
     _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
+      locationSettings: locationSettings,
     ).listen((Position position) {
       if (_isTracking && _userId != null) {
         _firestore.collection('locations').doc(_userId!).set({
