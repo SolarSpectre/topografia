@@ -6,16 +6,19 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'src/utils/area_calculator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'src/login_screen.dart';
+import 'src/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: "", 
-      appId: "",
-      messagingSenderId: "",
-      projectId: "",
-      )
+      apiKey: "AIzaSyBJMUpW1XXZovTRRS-RAiIMcc-YR3D5xPs",
+      appId: "1:515020313650:web:7d3688d99fec26b64ed82b",
+      messagingSenderId: "515020313650",
+      projectId: "a-f5b30",
+    )
   );
   runApp(const MyApp());
 }
@@ -30,7 +33,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MapScreen(),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasData) {
+            return const HomeScreen();
+          }
+          return const LoginScreen();
+        },
+      ),
     );
   }
 }
