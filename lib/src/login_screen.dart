@@ -142,7 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
         'email': email,
         'password': hashedPassword,
         'role': 'usuario',
-        'active': true,
       });
 
       final prefs = await SharedPreferences.getInstance();
