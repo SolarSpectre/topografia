@@ -10,6 +10,7 @@
     <application
         android:label="topografia"
         android:name="${applicationName}"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:icon="@mipmap/ic_launcher">
         <meta-data
         android:name="com.google.android.geo.API_KEY"

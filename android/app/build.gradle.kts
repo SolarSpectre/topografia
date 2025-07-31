@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
@@ -20,10 +21,25 @@ if (mapsApiKey.isEmpty()) {
     error("MAPS_API_KEY not found in secrets.properties")
 }
 
+val keyProperties = Properties()
+val keyPropertiesFile = rootProject.file("key.properties")
+if (keyPropertiesFile.exists()) {
+    keyProperties.load(FileInputStream(keyPropertiesFile))
+}
+
 android {
     namespace = "com.example.topografia"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keyProperties["keyAlias"] as String
+            keyPassword = keyProperties["keyPassword"] as String
+            storeFile = file(keyProperties["storeFile"] as String)
+            storePassword = keyProperties["storePassword"] as String
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -49,9 +65,21 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+    }
+
+    packagingOptions {
+        resources.excludes.apply {
+            add("META-INF/com/android/build/gradle/app-metadata.properties")
+            add("META-INF/version-control-info.textproto")
+            add("META-INF/*.version")
+            add("META-INF/LICENSE.txt")
+            add("META-INF/LICENSE")
+            add("META-INF/services/**")
+            add("META-INF/androidx/**")
         }
     }
 }

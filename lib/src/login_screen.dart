@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.person_pin_circle, size: 60, color: Color(0xFF1976d2)),
+                    const Icon(Icons.person_pin_circle, size: 60, color: Color(0xFF1976D2)),
                     const SizedBox(height: 12),
                     const Text(
                       'Iniciar Sesión',
