@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'map_detail_screen.dart';
+import 'crud_user.dart';
 import 'dart:async';
 
 class UserCrudScreen extends StatefulWidget {
@@ -73,7 +74,23 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestión de Usuarios')),
+      appBar: AppBar(
+        title: const Text('Gestión de Usuarios'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings),
+            tooltip: 'Administrar usuarios',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CrudUserScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           bool isLargeScreen = constraints.maxWidth > 600;
