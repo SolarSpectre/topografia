@@ -23,12 +23,18 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      setState(() { _error = e.message ?? 'Error de autenticación'; });
-    } finally {
-      if (!mounted) return;
-      setState(() { _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.message ?? 'Error de autenticación';
+          _loading = false;
+        });
+      }
     }
   }
 
