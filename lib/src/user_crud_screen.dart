@@ -7,7 +7,7 @@ import 'crud_user.dart';
 import 'dart:async';
 
 class UserCrudScreen extends StatefulWidget {
-  const UserCrudScreen({Key? key}) : super(key: key);
+  const UserCrudScreen({super.key});
 
   @override
   _UserCrudScreenState createState() => _UserCrudScreenState();
@@ -17,7 +17,7 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   GoogleMapController? _mapController;
-  Map<String, Marker> _markers = {};
+  final Map<String, Marker> _markers = {};
   String? _selectedUserId;
   StreamSubscription? _locationSubscription;
 

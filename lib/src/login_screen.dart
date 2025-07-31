@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -40,12 +40,20 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
       await _createUserDocument(userCredential.user);
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      setState(() { _error = e.message ?? 'Error al registrar'; });
-    } finally {
-      if (!mounted) return;
-      setState(() { _loading = false; });
+      // The StreamBuilder should handle navigation, but as a fallback, we navigate manually.
+      // This also ensures that this screen is unmounted, cleaning up the loading state.
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to register: $e';
+          _loading = false;
+        });
+      }
     }
   }
 

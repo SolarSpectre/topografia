@@ -8,10 +8,10 @@ class MapDetailScreen extends StatefulWidget {
   final String userEmail;
 
   const MapDetailScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.userEmail,
-  }) : super(key: key);
+  });
 
   @override
   _MapDetailScreenState createState() => _MapDetailScreenState();
