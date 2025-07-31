@@ -7,8 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'src/utils/spherical_area_calculator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'src/login_screen.dart';
 import 'src/home_screen.dart';
 
@@ -29,6 +29,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  Future<bool> _isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userId') != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,13 +41,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+      home: FutureBuilder<bool>(
+        future: _isLoggedIn(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasData) {
+          if (snapshot.data == true) {
             return const HomeScreen();
           }
           return const LoginScreen();
@@ -51,6 +56,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -75,8 +81,15 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _userId = FirebaseAuth.instance.currentUser?.uid;
+    _loadUserId();
     _requestPermissionAndGetLocation();
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getString('userId');
+    });
   }
 
   @override

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dbcrypt/dbcrypt.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
-//Ultima version
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,23 +16,75 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   String _error = '';
   bool _loading = false;
+  String? _emailError;
+  String? _passwordError;
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
 
   Future<void> _login() async {
-    setState(() { _loading = true; _error = ''; });
+    setState(() {
+      _loading = true;
+      _error = '';
+      _emailError = null;
+      _passwordError = null;
+    });
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    bool valid = true;
+
+    if (email.isEmpty) {
+      _emailError = 'El correo electrónico es obligatorio.';
+      valid = false;
+    } else if (!_isValidEmail(email)) {
+      _emailError = 'El formato del correo electrónico es incorrecto.';
+      valid = false;
+    }
+
+    if (password.isEmpty) {
+      _passwordError = 'La contraseña es obligatoria.';
+      valid = false;
+    }
+
+    if (!valid) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        throw Exception('Usuario no encontrado');
+      }
+
+      final userDoc = querySnapshot.docs.first;
+      final userData = userDoc.data();
+
+      if (!DBCrypt().checkpw(password, userData['password'])) {
+        throw Exception('Contraseña incorrecta');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', userDoc.id);
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
-    } on FirebaseAuthException catch (e) {
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.message ?? 'Error de autenticación';
+          _error = e.toString();
           _loading = false;
         });
       }
@@ -39,38 +92,77 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _register() async {
-    setState(() { _loading = true; _error = ''; });
+    setState(() {
+      _loading = true;
+      _error = '';
+      _emailError = null;
+      _passwordError = null;
+    });
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    bool valid = true;
+
+    if (email.isEmpty) {
+      _emailError = 'El correo electrónico es obligatorio.';
+      valid = false;
+    } else if (!_isValidEmail(email)) {
+      _emailError = 'El formato del correo electrónico es incorrecto.';
+      valid = false;
+    }
+
+    if (password.isEmpty) {
+      _passwordError = 'La contraseña es obligatoria.';
+      valid = false;
+    } else if (password.length < 6) {
+      _passwordError = 'La contraseña debe tener al menos 6 caracteres.';
+      valid = false;
+    }
+
+    if (!valid) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
+
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      await _createUserDocument(userCredential.user);
-      // The StreamBuilder should handle navigation, but as a fallback, we navigate manually.
-      // This also ensures that this screen is unmounted, cleaning up the loading state.
+      final existingUser = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (existingUser.docs.isNotEmpty) {
+        throw Exception('El correo electrónico ya está en uso');
+      }
+
+      final hashedPassword = DBCrypt().hashpw(password, DBCrypt().gensalt());
+      final userRef = await FirebaseFirestore.instance.collection('users').add({
+        'email': email,
+        'password': hashedPassword,
+        'role': 'usuario',
+        'active': true,
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', userRef.id);
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
-    } on Exception catch (e) {
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to register: $e';
+          _error = 'Error al registrarse: $e';
           _loading = false;
         });
       }
     }
   }
 
-  Future<void> _createUserDocument(User? user) async {
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'email': user.email,
-        'uid': user.uid,
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         filled: true,
                         fillColor: const Color(0xFFeaf4fb),
                         labelStyle: const TextStyle(color: Color(0xFF1976d2)),
+                        errorText: _emailError,
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
@@ -123,6 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         filled: true,
                         fillColor: const Color(0xFFeaf4fb),
                         labelStyle: const TextStyle(color: Color(0xFF1976d2)),
+                        errorText: _passwordError,
                       ),
                       obscureText: true,
                     ),
@@ -160,8 +254,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         label: _loading
                             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1976d2)))
-                            : const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF1976d2)))),
+                            : const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF1976d2))),
                       ),
+                    ),
                   ],
                 ),
               ),
