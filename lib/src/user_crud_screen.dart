@@ -80,13 +80,47 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
             tooltip: 'Administrar usuarios',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CrudUserScreen(),
-                ),
-              );
+            onPressed: () async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+                final data = userDoc.data();
+                final role = (data != null && data.containsKey('role')) ? data['role'] : '';
+                if (role == 'administrador') {
+                  // Acceso permitido
+                  // ignore: use_build_context_synchronously
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CrudUserScreen(),
+                    ),
+                  );
+                } else {
+                  // Acceso denegado
+                  // ignore: use_build_context_synchronously
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Acceso denegado'),
+                      content: const Text('TU NO TIENES PERMISOS SUFICIENTES PARA ESTA FUNCION'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Cerrar'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Volver'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              }
             },
           ),
         ],
