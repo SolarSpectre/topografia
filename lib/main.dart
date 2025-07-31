@@ -154,7 +154,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Real-time Map'),
+        title: const Text('Mapa en Tiempo Real'),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
@@ -251,7 +251,7 @@ class _MapScreenState extends State<MapScreen> {
       persistentFooterButtons: _isDrawing
           ? [
               TextButton(
-                child: const Text('Finish Polygon'),
+                child: const Text('Finalizar Poligono'),
                 onPressed: () {
                   _savePolygon();
                 },
@@ -275,25 +275,25 @@ class _MapScreenState extends State<MapScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Polygon Details'),
+          title: const Text('Detalles del Terreno'),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
                 Text('Area: ${area.toStringAsFixed(2)} m²'),
-                Text('Perimeter: ${perimeter.toStringAsFixed(2)} m'),
+                Text('Perimetro: ${perimeter.toStringAsFixed(2)} m'),
                 const SizedBox(height: 10),
                 const Text('Vertices:', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...points.asMap().entries.map((entry) {
                   int idx = entry.key;
                   LatLng point = entry.value;
-                  return Text('  Point ${idx + 1}: (${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)})');
+                  return Text('  Punto ${idx + 1}: (${point.latitude.toStringAsFixed(6)}, ${point.longitude.toStringAsFixed(6)})');
                 }),
               ],
             ),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Close'),
+              child: const Text('Cerrar'),
               onPressed: () {
                 Navigator.of(context).pop();
               },

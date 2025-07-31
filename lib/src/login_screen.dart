@@ -33,40 +33,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _register() async {
-    if (mounted) setState(() { _loading = true; _error = ''; });
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    setState(() { _loading = true; _error = ''; });
     try {
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
       await _createUserDocument(userCredential.user);
-      await FirebaseAuth.instance.signOut();
-      // Esperar a que el usuario esté realmente deslogueado
-      await Future.doWhile(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
-        return FirebaseAuth.instance.currentUser != null;
-      });
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // Cerrar el dialog de carga
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario registrado correctamente')),
-        );
-        _emailController.clear();
-        _passwordController.clear();
-      }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        setState(() { _error = e.message ?? 'Error al registrar'; });
-      }
+      if (!mounted) return;
+      setState(() { _error = e.message ?? 'Error al registrar'; });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (!mounted) return;
+      setState(() { _loading = false; });
     }
   }
 
@@ -165,9 +144,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        label: const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF1976d2))),
+                        label: _loading
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1976d2)))
+                            : const Text('Registrarse', style: TextStyle(fontSize: 16, color: Color(0xFF1976d2)))),
                       ),
-                    ),
                   ],
                 ),
               ),

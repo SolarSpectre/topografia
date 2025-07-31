@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:topografia/src/login_screen.dart';
+import '../main.dart';
 import 'user_crud_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -8,40 +9,88 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email ?? 'Usuario';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Menú Principal')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      appBar: AppBar(
+        title: Text('Bienvenido, $userEmail'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            ElevatedButton(
-              child: const Text('Mapa'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MapScreen()),
-                );
-              },
+            Expanded(
+              child: _buildDashboardCard(
+                context,
+                icon: Icons.map,
+                label: 'Mapa',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MapScreen()),
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              child: const Text('Gestión de usuarios'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UserCrudScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton(
-              child: const Text('Cerrar sesión'),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                // El StreamBuilder en main.dart redirigirá automáticamente al login
-              },
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildDashboardCard(
+                context,
+                icon: Icons.people,
+                label: 'Gestión de Usuarios',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const UserCrudScreen()),
+                  );
+                },
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardCard(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 48, color: Theme.of(context).primaryColor),
+              const SizedBox(height: 16),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

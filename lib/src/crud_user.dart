@@ -24,6 +24,7 @@ class _CrudUserScreenState extends State<CrudUserScreen> {
     final email = _emailController.text.trim();
     final role = _roleController.text.trim();
     if (email.isNotEmpty && role.isNotEmpty) {
+      
       await _firestore.collection('users').add({
         'email': email,
         'role': role,
