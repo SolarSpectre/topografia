@@ -74,11 +74,22 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFe3f0ff),
       appBar: AppBar(
-        title: const Text('Gestión de Usuarios'),
+        elevation: 0,
+        backgroundColor: const Color(0xFF1976d2),
+        title: const Text(
+          'Gestión de Usuarios',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            letterSpacing: 1.1,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.admin_panel_settings),
+            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
             tooltip: 'Administrar usuarios',
             onPressed: () async {
               final user = FirebaseAuth.instance.currentUser;
@@ -129,9 +140,43 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
         builder: (context, constraints) {
           bool isLargeScreen = constraints.maxWidth > 600;
           if (isLargeScreen) {
-            return _buildWideLayout();
+            return Container(
+              margin: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFf5faff),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildWideLayout(),
+              ),
+            );
           } else {
-            return _buildNarrowLayout();
+            return Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFf5faff),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: _buildNarrowLayout(),
+              ),
+            );
           }
         },
       ),
@@ -153,37 +198,48 @@ class _UserCrudScreenState extends State<UserCrudScreen> {
             final userEmail = user['email'] ?? 'No email';
             final userId = user.id;
 
-            return ListTile(
-              title: Tooltip(
-                message: userEmail,
-                child: Text(userEmail,
-                    overflow: TextOverflow.ellipsis, maxLines: 1),
-              ),
-              leading: StreamBuilder<DocumentSnapshot>(
-                stream:
-                    _firestore.collection('locations').doc(userId).snapshots(),
-                builder: (context, locationSnapshot) {
-                  bool isOnline = false;
-                  if (locationSnapshot.hasData &&
-                      locationSnapshot.data!.exists) {
-                    final data =
-                        locationSnapshot.data!.data() as Map<String, dynamic>;
-                    if (data.containsKey('timestamp') && data['timestamp'] != null) {
-                      final timestamp = (data['timestamp'] as Timestamp).toDate();
-                      if (DateTime.now().difference(timestamp).inMinutes < 5) {
-                        isOnline = true;
+            return Card(
+              color: const Color(0xFFeaf4fb),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                title: Tooltip(
+                  message: userEmail,
+                  child: Text(
+                    userEmail,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: Color(0xFF1976d2),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                leading: StreamBuilder<DocumentSnapshot>(
+                  stream: _firestore.collection('locations').doc(userId).snapshots(),
+                  builder: (context, locationSnapshot) {
+                    bool isOnline = false;
+                    if (locationSnapshot.hasData && locationSnapshot.data!.exists) {
+                      final data = locationSnapshot.data!.data() as Map<String, dynamic>;
+                      if (data.containsKey('timestamp') && data['timestamp'] != null) {
+                        final timestamp = (data['timestamp'] as Timestamp).toDate();
+                        if (DateTime.now().difference(timestamp).inMinutes < 5) {
+                          isOnline = true;
+                        }
                       }
                     }
-                  }
-                  return CircleAvatar(
-                    backgroundColor: isOnline ? Colors.green : Colors.grey,
-                    radius: 8,
-                  );
-                },
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.location_on),
-                onPressed: () => onUserSelected(userId, userEmail),
+                    return CircleAvatar(
+                      backgroundColor: isOnline ? Colors.green : Colors.grey,
+                      radius: 8,
+                    );
+                  },
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.location_on, color: Color(0xFF1976d2)),
+                  onPressed: () => onUserSelected(userId, userEmail),
+                ),
               ),
             );
           },
