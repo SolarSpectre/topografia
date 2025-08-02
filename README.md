@@ -151,6 +151,16 @@ La aplicación utiliza una **arquitectura de configuración en capas**:
 ## Sistema de mapeo y localización
 <img width="1640" height="622" alt="image" src="https://github.com/user-attachments/assets/a3684702-28ff-47e3-8f58-01a120f8aa05" />
 
+# App en la tienda de Amazon 
+<img width="1919" height="1019" alt="image" src="https://github.com/user-attachments/assets/cdead078-119c-4028-8236-aa3be250b944" />
+
+# Link de la aplicacion 
+```bash
+https://www.amazon.com/Farbiopharma-Topography/dp/B0FKR66XQL/ref=sr_1_1?crid=3CULFQ67P5KLL&dib=eyJ2IjoiMSJ9.R9vASfbjOHllg1mHuXGsxjWRgayEX_dYlzKLLtOSL37uGycVcLblas4EqnGEhdoB.5YEQnCenxZWOaVJAjrA3aEofGVNAUsVxwXG_zbmKczo&dib_tag=se&keywords=Topograf%C3%ADa+app&qid=1754158437&sprefix=topograf%C3%ADa+app%2Caps%2C169&sr=8-1
+```
+
+<img width="1919" height="908" alt="image" src="https://github.com/user-attachments/assets/bf0b446a-c446-4bcd-a8b2-9ec2f8c306d0" />
+
 
 ---
 
