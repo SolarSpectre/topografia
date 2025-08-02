@@ -85,7 +85,6 @@ Se implementan mensajes claros y localizados en la pantalla:
 
 ## 🏗️ Pila de Tecnología y Dependencias
 
-![Pila de tecnología](./3ee2b3bd-7293-49c9-bf1a-6fdf5239fc58.png)
 
 | Componente       | Tecnología                 | Objetivo |
 |------------------|---------------------------|---------|
@@ -97,7 +96,10 @@ Se implementan mensajes claros y localizados en la pantalla:
 | **Permisos**     | Manejador de permisos    | Gestión en tiempo de ejecución |
 | **Almacenamiento** | SharedPreferences      | Datos de sesión y usuario |
 
+Dependencias usadas
+<img width="1660" height="212" alt="image" src="https://github.com/user-attachments/assets/da836137-d1c9-4f5b-a59b-e55dffa81142" />
 ---
+
 
 ## 🔧 Descripción General de la Configuración
 La aplicación utiliza una **arquitectura de configuración en capas**:
@@ -109,11 +111,44 @@ La aplicación utiliza una **arquitectura de configuración en capas**:
 
 ## 📸 Capturas y Diagramas
 
-### Sistema de Autenticación
-![Sistema de autenticación](./05c2af76-b462-4406-8e2a-f57570ab983b.png)
+# Aplicación 
+## Login 📱
 
-### Manejo de Errores
-![Estrategia de manejo de errores](./769864a0-9034-4c06-8e46-ad6efd92366d.png)
+<p align="center">
+  <img width="300" height="551" src="https://github.com/user-attachments/assets/b202369f-08f7-4545-9c1a-39277459f8ac" alt="Login" />
+  <img width="300" height="550" alt="image" src="https://github.com/user-attachments/assets/8ece4196-0935-4465-83de-6b1465e24836" />
+</p>
+
+## Panel principal y Mapa
+<p align="center">
+  <img width="300" height="550" alt="image" src="https://github.com/user-attachments/assets/4b9834a1-a922-4967-a455-67d880fa97a3" />
+  <img width="300" height="550" alt="image" src="https://github.com/user-attachments/assets/042c0772-5aca-4b80-b138-f2c72e3dd75f" />
+</p>
+
+## Gestión de usuarios
+<p align="center">
+  <img width="300" height="550" alt="image" src="https://github.com/user-attachments/assets/963becee-1c24-475e-8c43-155d39466547" />
+  <img width="300" height="550" alt="image" src="https://github.com/user-attachments/assets/1f392a1d-b731-4872-8d6d-1cde6cd7ea7f" />
+
+</p>
+
+# Diagramas 
+
+## Arquitectura del sistema
+<img width="1671" height="431" alt="image" src="https://github.com/user-attachments/assets/420ecfe3-5028-48f2-bf3a-4ab438077dc9" />
+
+## Componentes principales y flujo de datos
+<img width="1693" height="647" alt="image" src="https://github.com/user-attachments/assets/7d6d004b-37e1-4248-ab35-f93effdb6a4d" />
+
+## Modelos y colecciones de datos
+<img width="1563" height="774" alt="image" src="https://github.com/user-attachments/assets/49210dd1-4500-4bc6-8a83-642d94fdf5b6" />
+
+## Sistema de gestión de usuarios
+<img width="1529" height="388" alt="image" src="https://github.com/user-attachments/assets/fa71cc7f-9b7a-4dc2-af7e-bd86c7bff1e2" />
+
+## Sistema de mapeo y localización
+<img width="1640" height="622" alt="image" src="https://github.com/user-attachments/assets/a3684702-28ff-47e3-8f58-01a120f8aa05" />
+
 
 ---
 
@@ -127,4 +162,8 @@ flutter pub get
 
 # Ejecutar la app
 flutter run
+```
+## 🏆 Créditos
+Desarrollado por Ariel Catucuamba y Joseph Caza
 
+Basado en Flutter + Firebase + Google Maps.
