@@ -111,8 +111,8 @@ La aplicación utiliza una **arquitectura de configuración en capas**:
 
 ## 📸 Capturas y Diagramas
 
-# Aplicación 
-## Login 📱
+# Aplicación 📱
+## Login 
 
 <p align="center">
   <img width="300" height="551" src="https://github.com/user-attachments/assets/b202369f-08f7-4545-9c1a-39277459f8ac" alt="Login" />
@@ -132,7 +132,9 @@ La aplicación utiliza una **arquitectura de configuración en capas**:
 
 </p>
 
-# Diagramas 
+# Diagramas <img width="40" height="40" alt="image" src="https://github.com/user-attachments/assets/2c15030d-94e5-46fc-a3ad-9f4ece829948" />
+
+
 
 ## Arquitectura del sistema
 <img width="1671" height="431" alt="image" src="https://github.com/user-attachments/assets/420ecfe3-5028-48f2-bf3a-4ab438077dc9" />
