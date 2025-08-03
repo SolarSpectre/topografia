@@ -1,3 +1,5 @@
+
+// Importaciones principales de Flutter, Firebase, Google Maps y utilidades.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,23 +14,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'src/login_screen.dart';
 import 'src/home_screen.dart';
 
+/// Punto de entrada principal de la aplicación.
+/// Inicializa Firebase y ejecuta la aplicación principal [MyApp].
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "",
-        appId: "",
-        messagingSenderId: "",
-        projectId: "",
+        apiKey: "", // Llena con tu apiKey de Firebase
+        appId: "", // Llena con tu appId de Firebase
+        messagingSenderId: "", // Llena con tu senderId de Firebase
+        projectId: "", // Llena con tu projectId de Firebase
       )
   );
   runApp(const MyApp());
 }
 //ultimo cambio
 
+
+/// Widget principal de la aplicación.
+/// Determina si el usuario está logueado y muestra la pantalla correspondiente.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  /// Verifica si el usuario está logueado consultando las preferencias compartidas.
   Future<bool> _isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('userId') != null;
@@ -41,6 +49,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      // Usa FutureBuilder para decidir si mostrar HomeScreen o LoginScreen
       home: FutureBuilder<bool>(
         future: _isLoggedIn(),
         builder: (context, snapshot) {
@@ -58,6 +67,9 @@ class MyApp extends StatelessWidget {
 }
 
 
+
+/// Pantalla principal del mapa.
+/// Permite ver la ubicación en tiempo real, dibujar polígonos y guardar áreas en Firestore.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -65,17 +77,29 @@ class MapScreen extends StatefulWidget {
   _MapScreenState createState() => _MapScreenState();
 }
 
+
 class _MapScreenState extends State<MapScreen> {
+  // Controlador del mapa de Google
   GoogleMapController? _mapController;
-  static const LatLng _initialPosition = LatLng(37.422, -122.084); // Default to GooglePlex
+  // Posición inicial del mapa (GooglePlex por defecto)
+  static const LatLng _initialPosition = LatLng(37.422, -122.084);
+  // Instancia de Firestore
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Suscripción al stream de ubicación
   StreamSubscription<Position>? _positionStream;
+  // ID del usuario actual
   String? _userId;
+  // Marcadores de usuarios
   final Set<Marker> _markers = {};
+  // Polígonos dibujados en el mapa
   final Set<Polygon> _polygons = {};
+  // Puntos actuales del polígono en edición
   List<LatLng> _polygonPoints = [];
+  // Marcadores de los puntos del polígono en edición
   Set<Marker> _polygonPointMarkers = {};
+  // Estado de dibujo de polígono
   bool _isDrawing = false;
+  // Estado de seguimiento de ubicación
   bool _isTracking = false;
 
   @override
@@ -85,6 +109,7 @@ class _MapScreenState extends State<MapScreen> {
     _requestPermissionAndGetLocation();
   }
 
+  /// Carga el userId almacenado en preferencias compartidas.
   Future<void> _loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -98,17 +123,19 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
+  /// Solicita permisos de ubicación y centra el mapa en la ubicación actual si se otorgan.
   void _requestPermissionAndGetLocation() async {
     final status = await Permission.location.request();
     if (status.isGranted) {
       _getCurrentLocationAndAnimateCamera();
     } else if (status.isDenied) {
-      // Handle denied permissions
+      // Permiso denegado, se puede mostrar un mensaje al usuario si se desea.
     } else if (status.isPermanentlyDenied) {
       openAppSettings();
     }
   }
 
+  /// Obtiene la ubicación actual y mueve la cámara del mapa a esa posición.
   void _getCurrentLocationAndAnimateCamera() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
@@ -126,6 +153,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  /// Inicia el seguimiento de la ubicación y guarda la posición en Firestore en tiempo real.
   void _startLocationUpdates() {
     final locationSettings = defaultTargetPlatform == TargetPlatform.android
         ? AndroidSettings(
@@ -155,26 +183,33 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  /// Detiene el seguimiento de la ubicación.
   void _stopLocationUpdates() {
     _positionStream?.cancel();
   }
 
+  /// Callback cuando el mapa es creado.
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }
 
+
+  /// Construye la interfaz de la pantalla del mapa.
+  /// Incluye el mapa, botones de acción y lógica para mostrar marcadores y polígonos.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mapa en Tiempo Real'),
         actions: [
+          // Botón para centrar el mapa en la ubicación actual
           IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: () {
               _getCurrentLocationAndAnimateCamera();
             },
-      ),
+          ),
+          // Botón para iniciar/detener el seguimiento de ubicación
           IconButton(
             icon: Icon(_isTracking ? Icons.stop : Icons.play_arrow),
             onPressed: () {
@@ -187,14 +222,15 @@ class _MapScreenState extends State<MapScreen> {
                 }
               });
             },
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('locations').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             _markers.clear();
+            // Agrega un marcador por cada usuario con ubicación registrada
             for (var doc in snapshot.data!.docs) {
               var data = doc.data() as Map<String, dynamic>;
               var marker = Marker(
@@ -206,6 +242,7 @@ class _MapScreenState extends State<MapScreen> {
             }
           }
 
+          // StreamBuilder anidado para mostrar polígonos guardados
           return StreamBuilder<QuerySnapshot>(
               stream: _firestore.collection('polygons').snapshots(),
               builder: (context, polygonSnapshot) {
@@ -232,6 +269,7 @@ class _MapScreenState extends State<MapScreen> {
                   }
                 }
 
+                // Muestra el mapa con los marcadores y polígonos
                 return GoogleMap(
                   onMapCreated: _onMapCreated,
                   initialCameraPosition: const CameraPosition(
@@ -247,12 +285,13 @@ class _MapScreenState extends State<MapScreen> {
               });
         },
       ),
+      // Botón flotante para activar/desactivar el modo de dibujo de polígono
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
             _isDrawing = !_isDrawing;
             if (!_isDrawing) {
-              // Clear points when exiting drawing mode without saving
+              // Limpia los puntos si se sale del modo dibujo sin guardar
               _polygonPoints = [];
               _polygonPointMarkers = {};
             }
@@ -261,6 +300,7 @@ class _MapScreenState extends State<MapScreen> {
         child: Icon(_isDrawing ? Icons.close : Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      // Botón para finalizar y guardar el polígono
       persistentFooterButtons: _isDrawing
           ? [
               TextButton(
@@ -274,6 +314,9 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+
+  /// Muestra un diálogo con la información del polígono seleccionado.
+  /// Incluye área, perímetro y coordenadas de los vértices.
   void _showPolygonInfo(List<LatLng> points, num area) {
     num perimeter = 0;
     for (int i = 0; i < points.length; i++) {
@@ -317,6 +360,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+
+  /// Agrega un punto al polígono en edición y actualiza el mapa.
   void _addPolygonPoint(LatLng point) {
     setState(() {
       _polygonPoints.add(point);
@@ -327,6 +372,7 @@ class _MapScreenState extends State<MapScreen> {
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         ),
       );
+      // Actualiza el polígono en edición
       _polygons.removeWhere((p) => p.polygonId.value == 'current');
       _polygons.add(
         Polygon(
@@ -340,17 +386,19 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  /// Guarda el polígono actual en Firestore si tiene más de 2 puntos.
+  /// Calcula el área usando la función utilitaria y muestra un mensaje de confirmación.
   void _savePolygon() {
     if (_polygonPoints.length > 2) {
       final area = calculateSphericalPolygonArea(_polygonPoints);
 
       if (_userId != null) {
-      _firestore.collection('polygons').add({
-        'points': _polygonPoints.map((p) => {'latitude': p.latitude, 'longitude': p.longitude}).toList(),
-        'area': area,
-        'user': _userId,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+        _firestore.collection('polygons').add({
+          'points': _polygonPoints.map((p) => {'latitude': p.latitude, 'longitude': p.longitude}).toList(),
+          'area': area,
+          'user': _userId,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

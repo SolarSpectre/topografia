@@ -1,8 +1,13 @@
+
+// Importaciones principales para la pantalla de detalle de mapa.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
+/// Pantalla que muestra la ubicación en tiempo real de un usuario específico en Google Maps.
+/// Recibe el userId y el email del usuario a mostrar.
 class MapDetailScreen extends StatefulWidget {
   final String userId;
   final String userEmail;
@@ -17,14 +22,19 @@ class MapDetailScreen extends StatefulWidget {
   _MapDetailScreenState createState() => _MapDetailScreenState();
 }
 
+
 class _MapDetailScreenState extends State<MapDetailScreen> {
+  // Controlador del mapa de Google
   GoogleMapController? _mapController;
+  // Marcador de la ubicación del usuario
   Marker? _userMarker;
+  // Suscripción al stream de Firestore para la ubicación
   StreamSubscription? _locationSubscription;
 
   @override
   void initState() {
     super.initState();
+    // Se suscribe a los cambios en la ubicación del usuario en Firestore
     _locationSubscription = FirebaseFirestore.instance
         .collection('locations')
         .doc(widget.userId)
@@ -38,6 +48,7 @@ class _MapDetailScreenState extends State<MapDetailScreen> {
 
         if (mounted) {
           setState(() {
+            // Actualiza el marcador con la nueva posición
             _userMarker = Marker(
               markerId: MarkerId(widget.userId),
               position: position,
@@ -45,6 +56,7 @@ class _MapDetailScreenState extends State<MapDetailScreen> {
             );
           });
 
+          // Centra la cámara en la nueva posición
           _mapController?.animateCamera(CameraUpdate.newCameraPosition(
             CameraPosition(target: position, zoom: 15),
           ));
@@ -55,10 +67,14 @@ class _MapDetailScreenState extends State<MapDetailScreen> {
 
   @override
   void dispose() {
+    // Cancela la suscripción al stream al cerrar la pantalla
     _locationSubscription?.cancel();
     super.dispose();
   }
 
+
+  /// Construye la interfaz de la pantalla de detalle de mapa.
+  /// Muestra el mapa centrado en la ubicación del usuario y actualiza en tiempo real.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,4 +91,4 @@ class _MapDetailScreenState extends State<MapDetailScreen> {
       ),
     );
   }
-} 
+}

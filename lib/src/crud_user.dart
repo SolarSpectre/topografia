@@ -1,3 +1,5 @@
+// Pantalla para la gestión (CRUD) de usuarios y administradores.
+// Permite crear, listar y eliminar usuarios en Firestore.
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dbcrypt/dbcrypt.dart';
@@ -5,6 +7,7 @@ import 'package:dbcrypt/dbcrypt.dart';
 class CrudUserScreen extends StatefulWidget {
   const CrudUserScreen({super.key});
 
+  // Widget principal de la pantalla CRUD de usuarios.
   @override
   _CrudUserScreenState createState() => _CrudUserScreenState();
 }
@@ -15,6 +18,7 @@ class _CrudUserScreenState extends State<CrudUserScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _roleController = TextEditingController();
 
+  // Variables para mostrar mensajes de error en los campos del formulario.
   String? _emailError;
   String? _passwordError;
   String? _roleError;
@@ -36,15 +40,18 @@ class _CrudUserScreenState extends State<CrudUserScreen> {
     return role == 'usuario' || role == 'administrador';
   }
 
+  // Valida el formato del correo electrónico.
   Future<void> _addUser() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final role = _roleController.text.trim();
     setState(() {
+  // Valida que el rol sea 'usuario' o 'administrador'.
       _emailError = null;
       _passwordError = null;
       _roleError = null;
     });
+  // Agrega un nuevo usuario a Firestore después de validar los datos y encriptar la contraseña.
     bool valid = true;
     if (email.isEmpty) {
       setState(() {
@@ -111,12 +118,15 @@ class _CrudUserScreenState extends State<CrudUserScreen> {
         elevation: 0,
         backgroundColor: const Color(0xFF1976d2),
         title: const Text(
+  // Elimina un usuario de Firestore por su ID.
           'CRUD Usuarios/Admins',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
             letterSpacing: 1.1,
+    // Construye la interfaz de usuario principal para la gestión de usuarios.
+    // Incluye formulario de registro y lista de usuarios existentes.
           ),
         ),
       ),

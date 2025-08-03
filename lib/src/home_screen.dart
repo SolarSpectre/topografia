@@ -1,3 +1,5 @@
+
+// Importaciones principales para la pantalla de inicio (panel principal)
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,6 +7,9 @@ import 'package:topografia/src/login_screen.dart';
 import '../main.dart';
 import 'user_crud_screen.dart';
 
+
+/// Pantalla principal de la aplicación tras iniciar sesión.
+/// Muestra el panel de bienvenida, opciones de navegación y permite cerrar sesión.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -12,7 +17,9 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
+
 class _HomeScreenState extends State<HomeScreen> {
+  // Email del usuario autenticado (se muestra en el saludo)
   String _userEmail = 'Usuario';
 
   @override
@@ -21,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserData();
   }
 
+  /// Carga el email del usuario autenticado desde Firestore usando el userId guardado en preferencias.
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('userId');
@@ -34,6 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
+  /// Construye la interfaz del panel principal.
+  /// Muestra el saludo, el botón de cerrar sesión y las opciones de navegación.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          // Botón para cerrar sesión
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'Cerrar sesión',
@@ -77,8 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Icono principal
                     const Icon(Icons.home, size: 60, color: Color(0xFF1976d2)),
                     const SizedBox(height: 12),
+                    // Título del panel
                     const Text(
                       'Panel Principal',
                       style: TextStyle(
@@ -89,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                    // Opciones de navegación
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -131,6 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Construye una tarjeta de opción del panel principal.
+  /// Recibe un icono, un texto y una acción al pulsar.
   Widget _buildDashboardCard(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,

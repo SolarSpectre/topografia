@@ -1,9 +1,14 @@
+
+// Importaciones principales para la pantalla de login y registro.
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dbcrypt/dbcrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 
+
+/// Pantalla de inicio de sesión y registro de usuario.
+/// Permite a los usuarios autenticarse o crear una cuenta nueva.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -11,18 +16,28 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+
 class _LoginScreenState extends State<LoginScreen> {
+  // Controladores para los campos de email y contraseña
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  // Mensaje de error general
   String _error = '';
+  // Estado de carga para mostrar indicador de progreso
   bool _loading = false;
+  // Mensajes de error específicos para los campos
   String? _emailError;
   String? _passwordError;
 
+  /// Valida el formato del correo electrónico usando una expresión regular.
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
+
+  /// Inicia sesión con el correo y contraseña proporcionados.
+  /// Valida los campos, consulta Firestore y verifica la contraseña con bcrypt.
+  /// Si es exitoso, guarda el userId en preferencias y navega a HomeScreen.
   Future<void> _login() async {
     setState(() {
       _loading = true;
@@ -35,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
     bool valid = true;
 
+    // Validación de campos
     if (email.isEmpty) {
       _emailError = 'El correo electrónico es obligatorio.';
       valid = false;
@@ -56,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      // Busca el usuario en Firestore
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: email)
@@ -69,13 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
       final userDoc = querySnapshot.docs.first;
       final userData = userDoc.data();
 
+      // Verifica la contraseña usando bcrypt
       if (!DBCrypt().checkpw(password, userData['password'])) {
         throw Exception('Contraseña incorrecta');
       }
 
+      // Guarda el userId en preferencias compartidas
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', userDoc.id);
 
+      // Navega a la pantalla principal si está montado
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -91,6 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+
+  /// Registra un nuevo usuario con email y contraseña.
+  /// Valida los campos, verifica que el email no exista, encripta la contraseña y guarda el usuario en Firestore.
+  /// Si es exitoso, guarda el userId y navega a HomeScreen.
   Future<void> _register() async {
     setState(() {
       _loading = true;
@@ -103,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
     bool valid = true;
 
+    // Validación de campos
     if (email.isEmpty) {
       _emailError = 'El correo electrónico es obligatorio.';
       valid = false;
@@ -127,6 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      // Verifica que el email no esté registrado
       final existingUser = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: email)
@@ -137,6 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('El correo electrónico ya está en uso');
       }
 
+      // Encripta la contraseña y guarda el usuario
       final hashedPassword = DBCrypt().hashpw(password, DBCrypt().gensalt());
       final userRef = await FirebaseFirestore.instance.collection('users').add({
         'email': email,
@@ -144,9 +171,11 @@ class _LoginScreenState extends State<LoginScreen> {
         'role': 'usuario',
       });
 
+      // Guarda el userId en preferencias compartidas
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', userRef.id);
 
+      // Navega a la pantalla principal si está montado
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -163,6 +192,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+
+  /// Construye la interfaz de usuario para login y registro.
+  /// Incluye validación visual, mensajes de error y botones de acción.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,8 +212,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Icono superior
                     const Icon(Icons.person_pin_circle, size: 60, color: Color(0xFF1976D2)),
                     const SizedBox(height: 12),
+                    // Título
                     const Text(
                       'Iniciar Sesión',
                       style: TextStyle(
@@ -192,6 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                    // Campo de email
                     TextField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -206,6 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 20),
+                    // Campo de contraseña
                     TextField(
                       controller: _passwordController,
                       decoration: InputDecoration(
@@ -220,11 +256,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: true,
                     ),
                     const SizedBox(height: 20),
+                    // Mensaje de error general
                     if (_error.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(_error, style: const TextStyle(color: Colors.red)),
                       ),
+                    // Botón de iniciar sesión
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -241,6 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
+                    // Botón de registro
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
