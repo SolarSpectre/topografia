@@ -136,6 +136,13 @@ La aplicación utiliza una **arquitectura de configuración en capas**:
 
 </p>
 
+## Creación del Poligono
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/109b4a8e-387e-4aba-8b79-d2d586eaef8e" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/7568334a-05f5-4306-9add-6354d55c5bef" />
+
+
+
+
 # Diagramas <img width="40" height="40" alt="image" src="https://github.com/user-attachments/assets/2c15030d-94e5-46fc-a3ad-9f4ece829948" />
 
 
